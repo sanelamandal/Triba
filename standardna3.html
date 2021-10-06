@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>TRIBA</title>
+</head>
+<body>
+	<canvas id = "myCanvas" width="1000px" height="1000px" style="border: 1px solid black"></canvas>
+
+	<script type="text/javascript">
+		var canvas = document.getElementById('myCanvas');
+		var ctx = canvas.getContext("2d");
+		var arr = [];
+		for (var i=0; i<10; i++) {
+			for (var j=0; j<4; j++) {
+				arr.push({
+					cx: i*100 + 30,
+					cy: j*100 +50,
+					r: 20,
+					color: "black"
+				});
+			}
+		}
+
+		function crtaj(){
+
+			for (var i = 0; i<arr.length; i++) {
+					ctx.fillStyle = arr[i].color;
+					ctx.beginPath();
+					ctx.arc(arr[i].cx, arr[i].cy, arr[i].r, 0, Math.PI*2);
+					ctx.fill();
+					ctx.stroke();
+			}
+		}
+
+		var brojac=0;
+		var igrac1 = {
+			color: "blue",
+			brojac: 0,
+			potez: false
+		};
+		var igrac2 = {
+			color: "red",
+			brojac: 0,
+			potez: false
+
+		};
+
+
+		function povezi(tacke){
+			ctx.moveTo(tacke[0].cx, tacke[0].cy);
+			ctx.lineTo(tacke[1].cx, tacke[1].cy);
+
+			ctx.moveTo(tacke[1].cx, tacke[1].cy);
+			ctx.lineTo(tacke[2].cx, tacke[2].cy);
+
+			ctx.moveTo(tacke[2].cx, tacke[2].cy);
+			ctx.lineTo(tacke[0].cx, tacke[0].cy);
+			ctx.stroke();
+		}
+
+		function linija() {
+			ctx.beginPath(); 
+		    ctx.moveTo(10,900);
+		    ctx.lineTo(990,900);
+		    if(igrac1.potez == true) {
+		    	ctx.strokeStyle = igrac1.color;
+		    }
+		    else if(igrac2.potez == true) {
+		    	ctx.strokeStyle = igrac2.color;
+		    }
+		    ctx.lineWidth = 5;
+		    ctx.stroke();
+		}
+
+		var u1,u2,u3;
+		function daLiJeTackaNaPravoj(ax,ay,bx,by,dx,dy) {
+			u1 = Math.sqrt((ax-dx)**2 + (ay-dy)**2);
+			u2 = Math.sqrt((bx-dx)**2 + (by-dy)**2);
+			u3 = Math.sqrt((ax-bx)**2 + (ay-by)**2);
+
+			if(u1 + u2 == u3) {
+				return true;
+			}
+			return false;
+
+		}
+
+		//ovu funkciju primijeniti na niz tacke, ukoliko su tacke nisu kolinearne bojimo ih bojom
+		//igraca koji je na potezu, a inace praznimo niz i igrac ostaje na potezu
+		//dok ne oznaci tri tacke koje nisu kolinearne i koje nisu vec oznacene
+		var a;
+		function kolinearne(x1,y1,x2,y2,x3,y3) {
+			a = x1 * (y2 - y3) +  x2 * (y3 - y1) +  x3 * (y1 - y2); 
+			if(a == 0) {
+				return true;
+			}
+			return false;
+		}
+
+		/* Za provjeru da li se trouglovi sijeku mozemo posmatrati da li se neka od oznacene tri tacke nalazi
+		u nekom drugom trouglu, napravimo funkciju koja provjerava da li se tacka nalazi u troglu i 
+		primijenimo je na oznacenu tacku, ako je to slucaj trouglovi ce da se sijeku sto nije dozvoljeno, pa
+		trebamo skinuti oznaku sa te tacke i dati igracu koji je na potezu da igra dok ne oznaci tri dozvoljene
+		tacke.
+		Takodjer, treba ispisati kraj igre, ako igrac koji je na potezu nema tri tacke koje bi mogao odigrati.
+		To mozemo regulisati prateci niz tacke, ako u njemu ne postoje tri tacke nakon sto igrac odigra znaci 
+		da nemamo dovoljno tacaka koje su dozvoljene (ako uzmemo u obzir uslove koje sam iskodirala i ove u ovom
+		komentaru).
+		*/
+
+
+		igrac1.potez = true;
+
+		var tacke = [];
+		canvas.addEventListener('mousedown', function(event) {
+		    x = event.pageX - canvas.getBoundingClientRect().left;
+		    y = event.pageY - canvas.getBoundingClientRect().top;
+		    for(var i=0;i<arr.length;i++){
+		    	if ((Math.sqrt((x-arr[i].cx)**2 + (y-arr[i].cy)**2)) < arr[i].r) {
+		    		if(igrac1.potez == true) {
+		    			if(arr[i].color == "black") {
+		    				arr[i].color = igrac1.color;
+		    				tacke.push(arr[i]);
+		    				igrac1.brojac++;
+		    			}
+		    			if(igrac1.brojac==3){
+		    				igrac1.brojac=0;
+		    				igrac1.potez=false;
+		    				povezi(tacke);
+
+		    				for(let j=0;j<arr.length;j++) {
+		    					if(daLiJeTackaNaPravoj(tacke[0].cx,tacke[0].cy,tacke[1].cx,tacke[1].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac1.color;
+		    						}
+		    					}
+		    					if(daLiJeTackaNaPravoj(tacke[1].cx,tacke[1].cy,tacke[2].cx,tacke[2].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac1.color;
+		    						}
+		    					}
+		    					if(daLiJeTackaNaPravoj(tacke[2].cx,tacke[2].cy,tacke[0].cx,tacke[0].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac1.color;
+		    						}
+		    					}
+
+		    				}
+
+		    				tacke = [];
+		    				igrac2.potez=true;
+		    			}
+		    		}
+		    		else if(igrac2.potez == true){
+		    			if(arr[i].color == "black") {
+		    				arr[i].color = igrac2.color;
+		    				tacke.push(arr[i]);
+		    				igrac2.brojac++;
+		    			}
+		    			if(igrac2.brojac==3){
+		    				igrac2.brojac=0;
+		    				igrac2.potez=false;
+		    				povezi(tacke);
+
+		    				for(let j=0;j<arr.length;j++) {
+		    					if(daLiJeTackaNaPravoj(tacke[0].cx,tacke[0].cy,tacke[1].cx,tacke[1].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac2.color;
+		    						}
+		    					}
+		    					if(daLiJeTackaNaPravoj(tacke[1].cx,tacke[1].cy,tacke[2].cx,tacke[2].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac2.color;
+		    						}
+		    					}
+		    					if(daLiJeTackaNaPravoj(tacke[2].cx,tacke[2].cy,tacke[0].cx,tacke[0].cy,arr[j].cx,arr[j].cy)) {
+		    						if(arr[j].color == "black"){
+		    							arr[j].color = igrac2.color;
+		    						}
+		    					}
+
+		    				}
+		    				tacke = [];
+		    				igrac1.potez=true;
+		    			}
+
+		    		}
+
+		    	}
+		    	crtaj();
+		    	linija();
+		    }
+		});
+	</script>
+	<br>
+	<button type="button"><a href="index.html">Nazad</a></button>
+</body>
+</html>
